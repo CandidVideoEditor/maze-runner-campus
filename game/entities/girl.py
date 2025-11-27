@@ -10,8 +10,8 @@ class Girl:
         self.px = x * TILE
         self.py = y * TILE
         self.target = (x, y)
-        self.speed = 4
-        self.lives = 3
+        self.speed = 8
+        self.lives = 5
         self.score = 0
         self.boost_timer = 0
 
@@ -37,9 +37,9 @@ class Girl:
         # speed boost handler
         if self.boost_timer > 0:
             self.boost_timer -= 1
-            self.speed = 8
+            self.speed = 12
         else:
-            self.speed = 4
+            self.speed = 8
 
         if (self.px, self.py) == (self.x * TILE, self.y * TILE):
             wanted_dir = None
