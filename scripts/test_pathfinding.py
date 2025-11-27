@@ -1,13 +1,23 @@
-# Quick test script for BFS and A* pathfinding.
+"""
+Test BFS / A* pathfinding on ASCII maps.
+"""
+
 from game.pathfinding.bfs import bfs
-from game.pathfinding.astar import astar
+
+sample_map = [
+    "11111",
+    "10001",
+    "10101",
+    "10001",
+    "11111",
+]
 
 def neighbors(x,y):
-    for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
-        yield (x+dx,y+dy)
+    for dx,dy in [(1,0),(-1,0),(0,1),(0,-1)]:
+        nx,ny = x+dx,y+dy
+        if sample_map[ny][nx] == "0":
+            yield (nx,ny)
 
-print("BFS path:", bfs((0,0),(2,0), neighbors))
-try:
-    print("A* path:", astar((0,0),(2,0), neighbors))
-except Exception as e:
-    print("A* not configured for this neighbors API by default:", e)
+if __name__ == "__main__":
+    path = bfs((1,1),(3,3),neighbors)
+    print("Path:", path)
