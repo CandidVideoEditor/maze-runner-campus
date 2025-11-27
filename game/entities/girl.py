@@ -36,7 +36,7 @@ class Girl:
     def update(self, keys, in_bounds_fn, passable_fn):
         # speed boost handler
         if self.boost_timer > 0:
-            self.boost_timer -= 1
+            self.boost_timer -= 5
             self.speed = 12
         else:
             self.speed = 8
