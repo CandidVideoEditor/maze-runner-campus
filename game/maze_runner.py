@@ -1,22 +1,35 @@
 #!/usr/bin/env python3
-# Main playable game. Uses shape-based rendering (no external assets required).
+# Maze Runner & Catcher Game - By Shravani & Medha
+# Fully working version with character sprites, items, HOD mechanics
 
-import pygame, sys, random
-from collections import deque
+import pygame
+import sys
+import random
+from pathlib import Path
 
 from game.config import *
 from game.entities.girl import Girl
 from game.entities.boy import Boy
 from game.entities.hod import HOD
-from game.entities.item import Item
-from game.pathfinding import bfs
-from game.pathfinding.bfs import bfs as bfs_fn
+from game.pathfinding.bfs import bfs
 from game.pathfinding.astar import astar
 from game.ui.hud import draw_hud
 from game.ui.title_screen import show_title
-from game.ui.end_screen import show_end
 
-# Handcrafted campus map (1 = wall, 0 = floor). Must match GRID_W x GRID_H.
+# Assets folder
+ASSETS_DIR = Path(__file__).parent / "assets"
+
+# Load character images
+GIRL_IMG = pygame.image.load(str(ASSETS_DIR / "girl.png")).convert_alpha()
+BOY_IMG = pygame.image.load(str(ASSETS_DIR / "boy.png")).convert_alpha()
+HOD_IMG = pygame.image.load(str(ASSETS_DIR / "hod.png")).convert_alpha()
+# Optional item image
+try:
+    ITEM_IMG = pygame.image.load(str(ASSETS_DIR / "item.png")).convert_alpha()
+except Exception:
+    ITEM_IMG = None
+
+# Handcrafted campus map (1 = wall, 0 = floor)
 RAW_MAP = [
     "111111111111111111111",
     "100000000010000000001",
@@ -36,15 +49,16 @@ RAW_MAP = [
     "100000000000000000001",
     "111111111111111111111",
 ]
+
 GAME_MAP = [[int(ch) for ch in row] for row in RAW_MAP]
 
-def in_bounds(x,y):
+def in_bounds(x, y):
     return 0 <= x < GRID_W and 0 <= y < GRID_H
 
-def passable(x,y):
+def passable(x, y):
     return GAME_MAP[y][x] == 0
 
-def neighbors(x,y):
+def neighbors(x, y):
     for dx, dy in ((1,0),(-1,0),(0,1),(0,-1)):
         nx, ny = x+dx, y+dy
         if in_bounds(nx, ny) and passable(nx, ny):
@@ -72,20 +86,23 @@ def make_items():
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-    pygame.display.set_caption("Maze Runner & Catcher By Shravani & Medha")
+    pygame.display.set_caption("Maze Runner & Catcher - Maze Runner By Shravani & Medha")
     clock = pygame.time.Clock()
 
+    # Show title screen
     show_title(screen)
 
-    # start positions
+    # Start positions
     player_start = (2, 2)
     boy_start = (GRID_W-3, GRID_H-3)
     hod_start = (GRID_W//2, GRID_H//2)
 
-    girl = Girl(*player_start)
-    boy = Boy(*boy_start)
-    hod = HOD(*hod_start)
+    # Initialize characters
+    girl = Girl(*player_start, GIRL_IMG)
+    boy = Boy(*boy_start, BOY_IMG)
+    hod = HOD(*hod_start, HOD_IMG)
 
+    # Generate items
     items = make_items()
     items.discard((girl.x, girl.y))
     items.discard((boy.x, boy.y))
@@ -97,13 +114,12 @@ def main():
 
     while True:
         dt = clock.tick(FPS)
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if e.type == pygame.KEYDOWN and (game_over or win):
-                # restart
-                return main()
+            if event.type == pygame.KEYDOWN and (game_over or win):
+                return main()  # restart
 
         keys = pygame.key.get_pressed()
 
@@ -112,7 +128,7 @@ def main():
             boy.update((girl.x, girl.y), neighbors)
             hod.update()
 
-            # pickup items
+            # Pickup items
             if (girl.x, girl.y) in items:
                 items.remove((girl.x, girl.y))
                 girl.score += 10
@@ -125,14 +141,13 @@ def main():
                 hod.rescue_cooldown = FPS*6
                 message_timer = FPS*2
 
-            # collision with boy
+            # Collision with boy
             if (girl.x, girl.y) == (boy.x, boy.y) and boy.freeze_timer == 0:
                 girl.lives -= 1
                 message_timer = FPS*2
                 if girl.lives <= 0:
                     game_over = True
                 else:
-                    # respawn player and temporarily freeze boy
                     girl.x, girl.y = player_start
                     girl.px, girl.py = girl.x * TILE, girl.y * TILE
                     boy.freeze(frames=FPS*2)
@@ -141,16 +156,18 @@ def main():
                 win = True
                 message_timer = FPS*3
 
-        # draw
+        # Draw map and items
         draw_map(screen)
-        # draw items set
         for (ix, iy) in items:
-            cx = ix*TILE + TILE//2
-            cy = iy*TILE + TILE//2
-            pygame.draw.circle(screen, ITEM_COLOR, (cx, cy), 4)
+            if ITEM_IMG:
+                screen.blit(ITEM_IMG, (ix*TILE, iy*TILE))
+            else:
+                cx = ix*TILE + TILE//2
+                cy = iy*TILE + TILE//2
+                pygame.draw.circle(screen, ITEM_COLOR, (cx, cy), 4)
 
+        # Draw characters
         hod.draw(screen)
-        # optional: draw boy path for debugging
         if getattr(boy, "path", None):
             for (px, py) in boy.path[:12]:
                 rect = pygame.Rect(px*TILE+TILE//4, py*TILE+TILE//4, TILE//2, TILE//2)
@@ -158,21 +175,24 @@ def main():
         boy.draw(screen)
         girl.draw(screen)
 
+        # HUD
         draw_hud(screen, girl, hod, boy)
 
+        # Message overlay
         if message_timer > 0:
             message_timer -= 1
             if game_over:
                 msg = "Aww Pookie... No worries lets play"
             elif win:
                 msg = "Hoorah Pookie. Click Your Name First Letter To start new game"
-            else:
-                msg = "i made by shravani & medha, Click S or M to continue"
+            else:  # lost 1 life
+                msg = "Hey, don't worry! You still have chances to continue. Come on Pookie! I am made by Shravani & Medha."
             font = pygame.font.SysFont(None, 22)
             surf = font.render(msg, True, WHITE)
             screen.blit(surf, (SCREEN_W//2 - surf.get_width()//2, SCREEN_H//2 - 10))
 
         pygame.display.flip()
+
 
 if __name__ == "__main__":
     main()
