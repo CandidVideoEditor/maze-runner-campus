@@ -72,7 +72,7 @@ def make_items():
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-    pygame.display.set_caption("Maze Runner & Catcher - Campus Edition")
+    pygame.display.set_caption("Maze Runner & Catcher By Shravani & Medha")
     clock = pygame.time.Clock()
 
     show_title(screen)
@@ -163,11 +163,11 @@ def main():
         if message_timer > 0:
             message_timer -= 1
             if game_over:
-                msg = "Caught! GAME OVER — press any key to restart"
+                msg = "Aww Pookie... No worries lets play"
             elif win:
-                msg = "You cleared the campus! YOU WIN — press any key to restart"
+                msg = "Hoorah Pookie. Click Your Name First Letter To start new game"
             else:
-                msg = "HOD helped you! Boy frozen!"
+                msg = "i made by shravani & medha, Click S or M to continue"
             font = pygame.font.SysFont(None, 22)
             surf = font.render(msg, True, WHITE)
             screen.blit(surf, (SCREEN_W//2 - surf.get_width()//2, SCREEN_H//2 - 10))
