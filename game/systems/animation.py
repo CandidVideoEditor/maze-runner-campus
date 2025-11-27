@@ -1,0 +1,1 @@
+# Minimal animation helpers (placeholder)
